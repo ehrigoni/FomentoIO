@@ -332,6 +332,8 @@ export default function App() {
   const [erroCnpj, setErroCnpj] = useState('');
   const [resultados, setResultados] = useState(null);
   const [editalAberto, setEditalAberto] = useState(null);
+  const [cnaesEmpresa, setCnaesEmpresa] = useState([]);
+  const [cnaesMarcados, setCnaesMarcados] = useState([]);
   const ultimaConsulta = useRef('');
   const resultadosRef = useRef(null);
 
@@ -344,10 +346,18 @@ export default function App() {
     ultimaConsulta.current = cnpj;
     setBuscandoCnpj(true);
     setErroCnpj('');
+    setCnaesEmpresa([]);
+    setCnaesMarcados([]);
     try {
       const info = await consultarCnpj(cnpj);
       if (ultimaConsulta.current !== cnpj) return; // usuário já digitou outro CNPJ
       setEmpresa(info);
+      const todos = new Map();
+      [{ codigo: info.cnae, descricao: info.cnaeDescricao }, ...info.cnaesSecundarios]
+        .filter((c) => c.codigo)
+        .forEach((c) => todos.has(c.codigo) || todos.set(c.codigo, c));
+      setCnaesEmpresa([...todos.values()]);
+      setCnaesMarcados(info.cnae ? [info.cnae] : []);
       setForm((f) => ({
         ...f,
         cnae: info.cnae || f.cnae,
@@ -374,20 +384,36 @@ export default function App() {
       ultimaConsulta.current = '';
       setBuscandoCnpj(false);
       setEmpresa(null);
+      setCnaesEmpresa([]);
+      setCnaesMarcados([]);
       setErroCnpj('');
       return;
     }
     if (!cnpjValido(limpo)) {
       setEmpresa(null);
+      setCnaesEmpresa([]);
+      setCnaesMarcados([]);
       setErroCnpj('CNPJ inválido. Confira os dígitos digitados.');
       return;
     }
     preencherPeloCnpj(limpo);
   };
 
+  const alternarCnae = (codigo) => {
+    setCnaesMarcados((atuais) =>
+      atuais.includes(codigo) ? atuais.filter((c) => c !== codigo) : [...atuais, codigo]
+    );
+  };
+
   const buscar = (e) => {
     e.preventDefault();
-    setResultados(buscarEditais(EDITAIS_DEMO, form));
+    const selecionados = cnaesEmpresa.filter((c) => cnaesMarcados.includes(c.codigo));
+    const perfil = {
+      ...form,
+      cnaes: empresa ? selecionados.map((c) => c.codigo) : [form.cnae],
+      cnaeDescricoes: selecionados.map((c) => c.descricao),
+    };
+    setResultados(buscarEditais(EDITAIS_DEMO, perfil));
     requestAnimationFrame(() =>
       resultadosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     );
@@ -458,6 +484,27 @@ export default function App() {
                   />
                 </div>
               </div>
+
+              {cnaesEmpresa.length > 0 && (
+                <div>
+                  <p className="mb-1.5 text-sm font-semibold text-ink">
+                    CNAEs da empresa
+                    <span className="ml-1.5 font-normal text-muted">marque os que interessam na busca</span>
+                  </p>
+                  <div className="grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+                    {cnaesEmpresa.map((c) => (
+                      <Marcador
+                        key={c.codigo}
+                        name={`cnae-${c.codigo}`}
+                        checked={cnaesMarcados.includes(c.codigo)}
+                        onChange={() => alternarCnae(c.codigo)}
+                        titulo={c.codigo}
+                        descricao={c.descricao}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Rotulo htmlFor="descricaoEmpresa">O que a sua empresa faz</Rotulo>

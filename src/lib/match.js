@@ -72,14 +72,16 @@ export function avaliarEdital(edital, perfil) {
   }
 
   // CNAE
-  const cnaeDigitos = String(perfil.cnae || '').replace(/\D/g, '');
-  if (cnaeDigitos && edital.cnaePrefixos.some((p) => cnaeDigitos.startsWith(p))) {
+  const cnaeHit = (perfil.cnaes || []).find((c) =>
+    edital.cnaePrefixos.some((p) => c.replace(/\D/g, '').startsWith(p))
+  );
+  if (cnaeHit) {
     score += 10;
-    ok(`CNAE ${perfil.cnae} dentro do setor priorizado`);
+    ok(`CNAE ${cnaeHit} dentro do setor priorizado`);
   }
 
   // Palavras-chave na descrição da empresa e do CNAE
-  const texto = normalizar(`${perfil.descricaoEmpresa} ${perfil.cnaeDescricao || ''}`);
+  const texto = normalizar(`${perfil.descricaoEmpresa} ${(perfil.cnaeDescricoes || []).join(' ')}`);
   const encontradas = edital.palavrasChave.filter((p) => texto.includes(normalizar(p)));
   if (encontradas.length) {
     score += Math.min(encontradas.length, 3) * 4;
