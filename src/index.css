@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-sun: var(--sun);
+  --color-alert: var(--alert);
+  --color-alert-soft: var(--alert-soft);
+}
+
+:root {
+  --paper: #F3F5F1;
+  --surface: #FFFFFF;
+  --ink: #16201B;
+  --muted: #5B6A62;
+  --line: #D5DDD6;
+  --brand: #0F5A43;
+  --brand-ink: #FFFFFF;
+  --brand-soft: #E1EEE7;
+  --sun: #D9A21B;
+  --alert: #B3261E;
+  --alert-soft: #FBE9E7;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0F1512;
+    --surface: #17201B;
+    --ink: #E6EDE8;
+    --muted: #9AABA1;
+    --line: #2A3630;
+    --brand: #5FC59C;
+    --brand-ink: #07130D;
+    --brand-soft: #1B3329;
+    --sun: #F2C94C;
+    --alert: #FF8A80;
+    --alert-soft: #3A1E1C;
+    color-scheme: dark;
+  }
+}
+
+html { background: var(--paper); }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
