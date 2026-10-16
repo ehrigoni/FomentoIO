@@ -39,14 +39,16 @@ export function avaliarEdital(edital, perfil) {
     }
   }
 
-  // Porte
+  // Porte (sem faixa conhecida, como empresas acima de ME/EPP, o critério não pesa)
   const porte = FAIXAS_FATURAMENTO.indexOf(perfil.faturamentoAnual);
-  if (edital.portes.includes(porte)) {
-    score += 15;
-    ok(`Aceita empresas ${PORTES_CURTOS[porte]}`);
-  } else {
-    score -= 30;
-    atencao(`Voltado a ${edital.portes.map((p) => PORTES_CURTOS[p]).join(', ')}`);
+  if (porte !== -1) {
+    if (edital.portes.includes(porte)) {
+      score += 15;
+      ok(`Aceita empresas ${PORTES_CURTOS[porte]}`);
+    } else {
+      score -= 30;
+      atencao(`Voltado a ${edital.portes.map((p) => PORTES_CURTOS[p]).join(', ')}`);
+    }
   }
 
   // Inovação / ICT

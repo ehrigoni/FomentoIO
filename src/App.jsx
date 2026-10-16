@@ -15,7 +15,6 @@ import {
   X,
 } from 'lucide-react';
 import {
-  FAIXAS_FATURAMENTO,
   cnpjValido,
   consultarCnpj,
   formatarCnpj,
@@ -25,15 +24,6 @@ import { PORTES_CURTOS, buscarEditais } from './lib/match.js';
 import { EDITAIS_DEMO } from './data/editais.js';
 
 const WHATSAPP_NUMERO = '5551999218758';
-
-const REGIOES = [
-  { valor: 'Brasil', rotulo: 'Nacional (todo o Brasil)' },
-  { valor: 'Sul', rotulo: 'Sul' },
-  { valor: 'Sudeste', rotulo: 'Sudeste' },
-  { valor: 'Nordeste', rotulo: 'Nordeste' },
-  { valor: 'Centro-Oeste', rotulo: 'Centro-Oeste' },
-  { valor: 'Norte', rotulo: 'Norte' },
-];
 
 const FONTES = [
   { id: 'pncp', nome: 'PNCP', detalhe: 'Portal Nacional de Contratações Públicas' },
@@ -318,9 +308,6 @@ export default function App() {
     descricaoEmpresa: '',
     cnpj: '',
     uf: '',
-    regiao: 'Sul',
-    faturamentoAnual: FAIXAS_FATURAMENTO[1],
-    qsa: '',
     isIctInovacao: false,
     rfbRegular: true,
     pgfnRegular: true,
@@ -372,9 +359,6 @@ export default function App() {
       setForm((f) => ({
         ...f,
         uf: info.uf,
-        regiao: info.regiao || f.regiao,
-        faturamentoAnual: info.faixaFaturamento || f.faturamentoAnual,
-        qsa: info.qsa || f.qsa,
       }));
     } catch (err) {
       if (ultimaConsulta.current !== cnpj) return;
@@ -419,7 +403,8 @@ export default function App() {
     // O CNAE principal sempre entra na busca; os secundários entram quando marcados
     const perfil = {
       ...form,
-      regiao: empresa?.regiao || form.regiao,
+      regiao: empresa?.regiao,
+      faturamentoAnual: empresa?.faixaFaturamento,
       cnaes: [empresa?.cnae, ...selecionados.map((c) => c.codigo)].filter(Boolean),
       cnaeDescricoes: [empresa?.cnaeDescricao, ...selecionados.map((c) => c.descricao)].filter(Boolean),
     };
@@ -535,55 +520,6 @@ export default function App() {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Rotulo htmlFor="regiao" dica={empresa ? 'pelo CNPJ' : undefined}>
-                    Região de atuação
-                  </Rotulo>
-                  <select
-                    id="regiao"
-                    name="regiao"
-                    value={form.regiao}
-                    onChange={atualizar}
-                    disabled={Boolean(empresa?.regiao)}
-                    className={`${campo} disabled:opacity-70`}
-                  >
-                    {REGIOES.map((r) => (
-                      <option key={r.valor} value={r.valor}>
-                        {r.rotulo}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Rotulo htmlFor="faturamentoAnual">Faturamento anual</Rotulo>
-                  <select
-                    id="faturamentoAnual"
-                    name="faturamentoAnual"
-                    value={form.faturamentoAnual}
-                    onChange={atualizar}
-                    className={campo}
-                  >
-                    {FAIXAS_FATURAMENTO.map((f) => (
-                      <option key={f}>{f}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <Rotulo htmlFor="qsa" dica="preenchido pelo CNPJ">
-                  Quadro societário
-                </Rotulo>
-                <input
-                  id="qsa"
-                  name="qsa"
-                  value={form.qsa}
-                  onChange={atualizar}
-                  placeholder="Ex.: Maria Souza (Sócia-Administradora)"
-                  className={campo}
-                />
-              </div>
             </fieldset>
 
             <div className="border-t border-line pt-7">
