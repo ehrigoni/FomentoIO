@@ -334,8 +334,22 @@ export default function App() {
   const [editalAberto, setEditalAberto] = useState(null);
   const [cnaesEmpresa, setCnaesEmpresa] = useState([]);
   const [cnaesMarcados, setCnaesMarcados] = useState([]);
+  const [cnpjTocado, setCnpjTocado] = useState(false);
   const ultimaConsulta = useRef('');
   const resultadosRef = useRef(null);
+  const cnpjRef = useRef(null);
+
+  const limpoCnpj = limparCnpj(form.cnpj);
+  const erroValidacaoCnpj = (() => {
+    if (limpoCnpj.length === 14) return cnpjValido(limpoCnpj) ? '' : 'CNPJ inválido. Confira os dígitos digitados.';
+    if (!cnpjTocado) return '';
+    if (!limpoCnpj) return 'Informe o CNPJ.';
+    return `CNPJ incompleto: faltam ${14 - limpoCnpj.length} caracteres.`;
+  })();
+  const dicaCnpj =
+    !cnpjTocado && limpoCnpj.length > 0 && limpoCnpj.length < 14
+      ? `Faltam ${14 - limpoCnpj.length} caracteres`
+      : '';
 
   const atualizar = (e) => {
     const { name, value, type, checked } = e.target;
@@ -352,12 +366,11 @@ export default function App() {
       const info = await consultarCnpj(cnpj);
       if (ultimaConsulta.current !== cnpj) return; // usuário já digitou outro CNPJ
       setEmpresa(info);
-      const todos = new Map();
-      [{ codigo: info.cnae, descricao: info.cnaeDescricao }, ...info.cnaesSecundarios]
-        .filter((c) => c.codigo)
-        .forEach((c) => todos.has(c.codigo) || todos.set(c.codigo, c));
-      setCnaesEmpresa([...todos.values()]);
-      setCnaesMarcados(info.cnae ? [info.cnae] : []);
+      const secundarios = new Map();
+      info.cnaesSecundarios
+        .filter((c) => c.codigo && c.codigo !== info.cnae)
+        .forEach((c) => secundarios.has(c.codigo) || secundarios.set(c.codigo, c));
+      setCnaesEmpresa([...secundarios.values()]);
       setForm((f) => ({
         ...f,
         cnae: info.cnae || f.cnae,
@@ -380,20 +393,14 @@ export default function App() {
     const mascarado = formatarCnpj(e.target.value);
     setForm((f) => ({ ...f, cnpj: mascarado, uf: '', cnaeDescricao: '' }));
     const limpo = limparCnpj(mascarado);
-    if (limpo.length < 14) {
+    if (limpo.length < 14 || !cnpjValido(limpo)) {
+      // Erros de preenchimento aparecem abaixo do campo (ver erroValidacaoCnpj)
       ultimaConsulta.current = '';
       setBuscandoCnpj(false);
       setEmpresa(null);
       setCnaesEmpresa([]);
       setCnaesMarcados([]);
       setErroCnpj('');
-      return;
-    }
-    if (!cnpjValido(limpo)) {
-      setEmpresa(null);
-      setCnaesEmpresa([]);
-      setCnaesMarcados([]);
-      setErroCnpj('CNPJ inválido. Confira os dígitos digitados.');
       return;
     }
     preencherPeloCnpj(limpo);
@@ -407,11 +414,17 @@ export default function App() {
 
   const buscar = (e) => {
     e.preventDefault();
+    if (!cnpjValido(limpoCnpj)) {
+      setCnpjTocado(true);
+      cnpjRef.current?.focus();
+      return;
+    }
     const selecionados = cnaesEmpresa.filter((c) => cnaesMarcados.includes(c.codigo));
+    // O CNAE principal sempre entra na busca; os secundários entram quando marcados
     const perfil = {
       ...form,
-      cnaes: empresa ? selecionados.map((c) => c.codigo) : [form.cnae],
-      cnaeDescricoes: selecionados.map((c) => c.descricao),
+      cnaes: [form.cnae, ...selecionados.map((c) => c.codigo)].filter(Boolean),
+      cnaeDescricoes: [form.cnaeDescricao, ...selecionados.map((c) => c.descricao)].filter(Boolean),
     };
     setResultados(buscarEditais(EDITAIS_DEMO, perfil));
     requestAnimationFrame(() =>
@@ -457,18 +470,28 @@ export default function App() {
                     <input
                       id="cnpj"
                       name="cnpj"
+                      ref={cnpjRef}
                       value={form.cnpj}
                       onChange={alterarCnpj}
+                      onBlur={() => setCnpjTocado(true)}
                       placeholder="00.000.000/0001-00"
                       autoComplete="off"
-                      className={`${campo} pr-10 tabular-nums`}
-                      aria-invalid={Boolean(erroCnpj)}
+                      className={`${campo} pr-10 tabular-nums ${erroValidacaoCnpj ? 'border-alert focus:border-alert focus:ring-alert/25' : ''}`}
+                      aria-invalid={Boolean(erroValidacaoCnpj)}
+                      aria-describedby="cnpj-mensagem"
                       required
                     />
                     {buscandoCnpj && (
                       <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-brand" />
                     )}
                   </div>
+                  <p id="cnpj-mensagem" className="mt-1.5 min-h-5 text-[13px]" aria-live="polite">
+                    {erroValidacaoCnpj ? (
+                      <span className="font-semibold text-alert">{erroValidacaoCnpj}</span>
+                    ) : (
+                      <span className="text-muted">{dicaCnpj}</span>
+                    )}
+                  </p>
                 </div>
                 <div>
                   <Rotulo htmlFor="cnae" dica="preenchido pelo CNPJ">
@@ -488,7 +511,7 @@ export default function App() {
               {cnaesEmpresa.length > 0 && (
                 <div>
                   <p className="mb-1.5 text-sm font-semibold text-ink">
-                    CNAEs da empresa
+                    CNAEs secundários
                     <span className="ml-1.5 font-normal text-muted">marque os que interessam na busca</span>
                   </p>
                   <div className="grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
