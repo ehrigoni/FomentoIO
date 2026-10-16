@@ -25,13 +25,6 @@ import { EDITAIS_DEMO } from './data/editais.js';
 
 const WHATSAPP_NUMERO = '5551999218758';
 
-const FONTES = [
-  { id: 'pncp', nome: 'PNCP', detalhe: 'Portal Nacional de Contratações Públicas' },
-  { id: 'transparencia', nome: 'Portal da Transparência', detalhe: 'Consulta ao CEIS e CNEP' },
-  { id: 'serpro', nome: 'Serpro', detalhe: 'Situação fiscal e certidões' },
-  { id: 'saas', nome: 'Plataformas de editais', detalhe: 'Agregadores privados' },
-];
-
 const campo =
   'w-full rounded-md border border-line bg-surface px-3 py-2.5 text-[15px] text-ink placeholder:text-muted/70 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/25';
 
@@ -566,24 +559,6 @@ export default function App() {
             >
               <Search className="size-5" /> Buscar oportunidades
             </button>
-
-            <div className="rounded-xl border border-dashed border-line p-5">
-              <h2 className="text-sm font-bold">Fontes de dados</h2>
-              <p className="mt-1 text-[13px] text-muted">Integrações em desenvolvimento.</p>
-              <ul className="mt-3 space-y-2">
-                {FONTES.map((f) => (
-                  <li key={f.id} className="flex items-baseline justify-between gap-3 text-[13px]">
-                    <span>
-                      <span className="font-semibold">{f.nome}</span>
-                      <span className="block text-muted">{f.detalhe}</span>
-                    </span>
-                    <span className="shrink-0 rounded-full bg-paper px-2 py-0.5 text-[11px] font-semibold text-muted">
-                      em breve
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </aside>
         </form>
 
