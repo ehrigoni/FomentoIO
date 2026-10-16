@@ -1,15 +1,18 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
+  BookOpen,
   Building2,
   CalendarClock,
   CheckCircle2,
   Landmark,
   Loader2,
+  MessageCircle,
   Search,
   ShieldCheck,
   Sprout,
   Wallet,
+  X,
 } from 'lucide-react';
 import {
   FAIXAS_FATURAMENTO,
@@ -18,8 +21,10 @@ import {
   formatarCnpj,
   limparCnpj,
 } from './lib/cnpj.js';
-import { buscarEditais } from './lib/match.js';
+import { PORTES_CURTOS, buscarEditais } from './lib/match.js';
 import { EDITAIS_DEMO } from './data/editais.js';
+
+const WHATSAPP_NUMERO = '5551999218758';
 
 const REGIOES = [
   { valor: 'Brasil', rotulo: 'Nacional (todo o Brasil)' },
@@ -138,7 +143,125 @@ function ResumoEmpresa({ info, buscando, erro }) {
   );
 }
 
-function ItemEdital({ edital }) {
+function textoAbrangencia(abrangencia) {
+  if (!abrangencia) return 'Nacional (todo o Brasil)';
+  if (abrangencia.ufs) return `Restrito às UFs ${abrangencia.ufs.join(', ')}`;
+  return `Restrito à região ${abrangencia.regioes.join(' e ')}`;
+}
+
+function ModalEdital({ edital, onFechar }) {
+  useEffect(() => {
+    const aoPressionarEsc = (e) => e.key === 'Escape' && onFechar();
+    document.addEventListener('keydown', aoPressionarEsc);
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', aoPressionarEsc);
+      document.body.style.overflow = overflowAnterior;
+    };
+  }, [onFechar]);
+
+  const requisitos = [
+    edital.exigeInovacao && 'Projeto de inovação ou parceria com ICT',
+    edital.exigeRegularidade && 'Certidão negativa de débitos (RFB/PGFN)',
+  ].filter(Boolean);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 sm:items-center sm:p-5" onClick={onFechar}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-modal-edital"
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-t-xl border border-line bg-surface shadow-xl sm:rounded-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-brand">{edital.orgao}</p>
+            <h2 id="titulo-modal-edital" className="mt-0.5 text-xl font-bold leading-snug">
+              {edital.titulo}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onFechar}
+            aria-label="Fechar"
+            className="grid size-9 shrink-0 place-items-center rounded-md text-muted transition hover:bg-brand-soft hover:text-ink"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="space-y-6 overflow-y-auto px-6 py-5">
+          <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-[13px] text-muted">Tipo</dt>
+              <dd className="font-semibold">{edital.tipo}</dd>
+            </div>
+            <div>
+              <dt className="text-[13px] text-muted">Valor máximo</dt>
+              <dd className="font-semibold">{edital.valorMaximo}</dd>
+            </div>
+            <div>
+              <dt className="text-[13px] text-muted">Prazo</dt>
+              <dd className="font-semibold">{edital.prazo}</dd>
+            </div>
+            <div>
+              <dt className="text-[13px] text-muted">Abrangência</dt>
+              <dd className="font-semibold">{textoAbrangencia(edital.abrangencia)}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-[13px] text-muted">Portes aceitos</dt>
+              <dd className="font-semibold">{edital.portes.map((p) => PORTES_CURTOS[p]).join(', ')}</dd>
+            </div>
+          </dl>
+
+          <div>
+            <h3 className="mb-2 text-sm font-bold">Requisitos</h3>
+            {requisitos.length ? (
+              <ul className="space-y-1.5 text-sm">
+                {requisitos.map((r) => (
+                  <li key={r} className="flex items-start gap-2">
+                    <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand" /> {r}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted">Nenhum requisito específico além das regras gerais do edital.</p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-bold">Compatibilidade com a sua empresa</h3>
+            <ul className="space-y-1.5 text-sm">
+              {edital.motivos.map((m) => (
+                <li key={m.texto} className="flex items-start gap-2">
+                  {m.tipo === 'ok' ? (
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-brand" />
+                  ) : (
+                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-alert" />
+                  )}
+                  <span className={m.tipo === 'ok' ? '' : 'text-alert'}>{m.texto}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="rounded-md bg-sun/10 p-3 text-[13px]">
+            Versão de demonstração: o texto completo do edital será exibido quando a integração com a fonte oficial
+            estiver pronta.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ItemEdital({ edital, onDetalhes }) {
+  const linkWhatsapp = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(
+    `Olá! Quero ajuda para ganhar o edital "${edital.titulo}" (${edital.orgao}).`
+  )}`;
+
   return (
     <li className="flex gap-5 px-5 py-6 sm:px-7">
       <SeloCompatibilidade valor={edital.score} />
@@ -168,6 +291,23 @@ function ItemEdital({ edital }) {
             </li>
           ))}
         </ul>
+        <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => onDetalhes(edital)}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-brand px-4 py-2.5 text-sm font-bold text-brand transition hover:bg-brand-soft"
+          >
+            <BookOpen className="size-4" /> Ler mais detalhes sobre este edital
+          </button>
+          <a
+            href={linkWhatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2.5 text-sm font-bold text-brand-ink transition hover:brightness-110"
+          >
+            <MessageCircle className="size-4" /> Quero ajuda para ganhar esse edital
+          </a>
+        </div>
       </div>
     </li>
   );
@@ -191,6 +331,7 @@ export default function App() {
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
   const [erroCnpj, setErroCnpj] = useState('');
   const [resultados, setResultados] = useState(null);
+  const [editalAberto, setEditalAberto] = useState(null);
   const ultimaConsulta = useRef('');
   const resultadosRef = useRef(null);
 
@@ -461,13 +602,15 @@ export default function App() {
               </div>
               <ul className="mt-5 divide-y divide-line rounded-xl border border-line bg-surface">
                 {resultados.map((e) => (
-                  <ItemEdital key={e.id} edital={e} />
+                  <ItemEdital key={e.id} edital={e} onDetalhes={setEditalAberto} />
                 ))}
               </ul>
             </div>
           )}
         </section>
       </main>
+
+      {editalAberto && <ModalEdital edital={editalAberto} onFechar={() => setEditalAberto(null)} />}
     </div>
   );
 }

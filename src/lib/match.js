@@ -1,6 +1,6 @@
 import { FAIXAS_FATURAMENTO, UF_REGIAO } from './cnpj.js';
 
-const PORTES_CURTOS = ['ME', 'EPP', 'médio porte', 'grande porte'];
+export const PORTES_CURTOS = ['ME', 'EPP', 'médio porte', 'grande porte'];
 
 const normalizar = (t) =>
   String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
