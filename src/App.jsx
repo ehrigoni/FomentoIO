@@ -423,6 +423,7 @@ export default function App() {
     // O CNAE principal sempre entra na busca; os secundários entram quando marcados
     const perfil = {
       ...form,
+      regiao: empresa?.regiao || form.regiao,
       cnaes: [form.cnae, ...selecionados.map((c) => c.codigo)].filter(Boolean),
       cnaeDescricoes: [form.cnaeDescricao, ...selecionados.map((c) => c.descricao)].filter(Boolean),
     };
@@ -545,8 +546,17 @@ export default function App() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Rotulo htmlFor="regiao">Região de atuação</Rotulo>
-                  <select id="regiao" name="regiao" value={form.regiao} onChange={atualizar} className={campo}>
+                  <Rotulo htmlFor="regiao" dica={empresa ? 'pelo CNPJ' : undefined}>
+                    Região de atuação
+                  </Rotulo>
+                  <select
+                    id="regiao"
+                    name="regiao"
+                    value={form.regiao}
+                    onChange={atualizar}
+                    disabled={Boolean(empresa?.regiao)}
+                    className={`${campo} disabled:opacity-70`}
+                  >
                     {REGIOES.map((r) => (
                       <option key={r.valor} value={r.valor}>
                         {r.rotulo}
