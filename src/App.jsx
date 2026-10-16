@@ -317,8 +317,6 @@ export default function App() {
   const [form, setForm] = useState({
     descricaoEmpresa: '',
     cnpj: '',
-    cnae: '',
-    cnaeDescricao: '',
     uf: '',
     regiao: 'Sul',
     faturamentoAnual: FAIXAS_FATURAMENTO[1],
@@ -373,8 +371,6 @@ export default function App() {
       setCnaesEmpresa([...secundarios.values()]);
       setForm((f) => ({
         ...f,
-        cnae: info.cnae || f.cnae,
-        cnaeDescricao: info.cnaeDescricao,
         uf: info.uf,
         regiao: info.regiao || f.regiao,
         faturamentoAnual: info.faixaFaturamento || f.faturamentoAnual,
@@ -391,7 +387,7 @@ export default function App() {
 
   const alterarCnpj = (e) => {
     const mascarado = formatarCnpj(e.target.value);
-    setForm((f) => ({ ...f, cnpj: mascarado, uf: '', cnaeDescricao: '' }));
+    setForm((f) => ({ ...f, cnpj: mascarado, uf: '' }));
     const limpo = limparCnpj(mascarado);
     if (limpo.length < 14 || !cnpjValido(limpo)) {
       // Erros de preenchimento aparecem abaixo do campo (ver erroValidacaoCnpj)
@@ -424,8 +420,8 @@ export default function App() {
     const perfil = {
       ...form,
       regiao: empresa?.regiao || form.regiao,
-      cnaes: [form.cnae, ...selecionados.map((c) => c.codigo)].filter(Boolean),
-      cnaeDescricoes: [form.cnaeDescricao, ...selecionados.map((c) => c.descricao)].filter(Boolean),
+      cnaes: [empresa?.cnae, ...selecionados.map((c) => c.codigo)].filter(Boolean),
+      cnaeDescricoes: [empresa?.cnaeDescricao, ...selecionados.map((c) => c.descricao)].filter(Boolean),
     };
     setResultados(buscarEditais(EDITAIS_DEMO, perfil));
     requestAnimationFrame(() =>
@@ -494,28 +490,23 @@ export default function App() {
                     )}
                   </p>
                 </div>
-                <div>
-                  <Rotulo htmlFor="cnae" dica="preenchido pelo CNPJ">
-                    CNAE principal
-                  </Rotulo>
-                  <input
-                    id="cnae"
-                    name="cnae"
-                    value={form.cnae}
-                    onChange={atualizar}
-                    placeholder={buscandoCnpj ? 'Consultando…' : '6201-5/01'}
-                    className={`${campo} tabular-nums`}
-                  />
-                </div>
               </div>
 
-              {cnaesEmpresa.length > 0 && (
+              {empresa && (
                 <div>
                   <p className="mb-1.5 text-sm font-semibold text-ink">
-                    CNAEs secundários
-                    <span className="ml-1.5 font-normal text-muted">marque os que interessam na busca</span>
+                    CNAEs
+                    {cnaesEmpresa.length > 0 && (
+                      <span className="ml-1.5 font-normal text-muted">marque os secundários que interessam na busca</span>
+                    )}
                   </p>
                   <div className="grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+                    <div className="rounded-md border border-line bg-paper p-3">
+                      <span className="block text-sm font-semibold tabular-nums">
+                        {empresa.cnae} <span className="font-normal text-muted">· principal, sempre incluído</span>
+                      </span>
+                      <span className="block text-[13px] text-muted">{empresa.cnaeDescricao}</span>
+                    </div>
                     {cnaesEmpresa.map((c) => (
                       <Marcador
                         key={c.codigo}
